@@ -7,17 +7,21 @@
     "video-localize": "dist/cli/index.js"
   },
   "scripts": {
-    "dev": "tsx watch src/cli/index.ts",
+    "dev": "node scripts/dev.js",
     "build": "tsc && chmod +x dist/cli/index.js",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
+    "test:integration": "vitest tests/integration",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src/**/*.{ts,tsx}",
     "setup": "node scripts/setup.js",
-    "process": "tsx src/cli/index.ts"
+    "setup:auto": "node scripts/setup.js --auto",
+    "process": "tsx src/cli/index.ts",
+    "cli": "node dist/cli/index.js",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "video",
