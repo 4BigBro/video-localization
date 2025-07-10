@@ -1,0 +1,82 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Install ffmpeg
+      run: |
+        brew install ffmpeg
+        ffmpeg -version
+        
+    - name: Lint code
+      run: pnpm lint
+      
+    - name: Type check
+      run: pnpm typecheck
+      
+    - name: Run tests
+      run: pnpm test
+      
+    - name: Build project
+      run: pnpm run build
+      
+    - name: Test CLI with sample
+      run: |
+        if [ -f "scripts/test-sample.sh" ]; then
+          chmod +x scripts/test-sample.sh
+          ./scripts/test-sample.sh
+        fi
+      
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Run security audit
+      run: pnpm audit
+      
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
