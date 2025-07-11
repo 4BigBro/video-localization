@@ -5,7 +5,7 @@ import { ProgressTracker } from '../utils/progress.js';
 import { ensureDirectoryExists } from '../utils/file-utils.js';
 import { AudioExtractor } from '../extract/index.js';
 import { WhisperTranscriber, OpenAITranscriber } from '../transcribe/index.js';
-import { ClaudeTranslator, OpenAITranslator, DeepLTranslator } from '../translate/index.js';
+import { OpenAITranslator, DeepLTranslator } from '../translate/index.js';
 import { EdgeTTS, OpenAITTS } from '../synthesize/index.js';
 import { VideoMerger } from '../merge/index.js';
 import { ProcessingOptions, ProcessingResult } from '../types/index.js';
@@ -162,23 +162,18 @@ export class VideoLocalizationPipeline extends EventEmitter {
     
     this.progressTracker.updateStage(10, `Initializing ${provider} translator`);
 
-    if (provider === 'claude') {
-      const apiKey = this.config?.apiKeys?.claude;
-      if (!apiKey) {
-        throw new Error('Claude API key not configured');
-      }
-      
-      const translator = new ClaudeTranslator({ apiKey });
-      this.progressTracker.updateStage(30, 'Translating with Claude');
-      
-      return await translator.translateSegments(segments, options.targetLanguage);
-    } else if (provider === 'openai') {
+    if (provider === 'openai') {
       const apiKey = this.config?.apiKeys?.openai;
       if (!apiKey) {
         throw new Error('OpenAI API key not configured');
       }
       
-      const translator = new OpenAITranslator({ apiKey });
+      const translatorOptions: any = { apiKey };
+      if (this.config?.baseUrls?.openai) {
+        translatorOptions.baseUrl = this.config.baseUrls.openai;
+      }
+      
+      const translator = new OpenAITranslator(translatorOptions);
       this.progressTracker.updateStage(30, 'Translating with OpenAI');
       
       return await translator.translateSegments(segments, options.targetLanguage);
@@ -188,7 +183,12 @@ export class VideoLocalizationPipeline extends EventEmitter {
         throw new Error('DeepL API key not configured');
       }
       
-      const translator = new DeepLTranslator({ apiKey });
+      const translatorOptions: any = { apiKey };
+      if (this.config?.baseUrls?.deepl) {
+        translatorOptions.baseUrl = this.config.baseUrls.deepl;
+      }
+      
+      const translator = new DeepLTranslator(translatorOptions);
       this.progressTracker.updateStage(30, 'Translating with DeepL');
       
       return await translator.translateSegments(segments, 'ZH');

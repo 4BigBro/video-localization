@@ -157,14 +157,13 @@ async function setupConfiguration() {
     
     const defaultConfig = {
       apiKeys: {
-        claude: process.env.CLAUDE_API_KEY || null,
         openai: process.env.OPENAI_API_KEY || null,
         deepl: process.env.DEEPL_API_KEY || null,
       },
       defaults: {
         ttsProvider: 'edge',
         transcriptionProvider: 'whisper',
-        translationProvider: 'claude',
+        translationProvider: 'openai',
         audioQuality: 'high',
       },
       ffmpeg: {

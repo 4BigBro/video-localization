@@ -81,7 +81,7 @@ export class OpenAITranslator {
         throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as any;
       const translatedText = result.choices[0]?.message?.content || '';
       
       return {

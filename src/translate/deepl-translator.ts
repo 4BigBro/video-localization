@@ -69,7 +69,7 @@ export class DeepLTranslator {
         throw new Error(`DeepL API error: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as any;
       const translatedText = result.translations[0]?.text || '';
       
       return {
@@ -112,7 +112,7 @@ export class DeepLTranslator {
         throw new Error(`DeepL API error: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as any;
       const translations = result.translations || [];
       
       return segments.map((segment, index) => ({
@@ -155,7 +155,7 @@ export class DeepLTranslator {
         throw new Error(`DeepL API error: ${response.status} ${errorText}`);
       }
 
-      return await response.json();
+      return await response.json() as { character_count: number; character_limit: number };
     } catch (error) {
       logger.error(`Failed to get DeepL usage: ${error}`);
       throw error;

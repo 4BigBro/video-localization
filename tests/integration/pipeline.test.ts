@@ -21,14 +21,13 @@ describe('VideoLocalizationPipeline Integration', () => {
     vi.doMock('../../src/cli/config.js', () => ({
       loadConfig: vi.fn().mockResolvedValue({
         apiKeys: {
-          claude: 'test-claude-key',
           openai: 'test-openai-key',
           deepl: 'test-deepl-key',
         },
         defaults: {
           ttsProvider: 'edge',
           transcriptionProvider: 'whisper',
-          translationProvider: 'claude',
+          translationProvider: 'openai',
           audioQuality: 'high',
         },
       }),
@@ -46,7 +45,7 @@ describe('VideoLocalizationPipeline Integration', () => {
       targetLanguage: 'Chinese',
       ttsProvider: 'edge' as const,
       transcriptionProvider: 'whisper' as const,
-      translationProvider: 'claude' as const,
+      translationProvider: 'openai' as const,
       keepIntermediateFiles: false,
       audioQuality: 'high' as const,
     };
@@ -103,7 +102,7 @@ describe('VideoLocalizationPipeline Integration', () => {
         loadConfig: vi.fn().mockResolvedValue({
           apiKeys: {},
           defaults: {
-            translationProvider: 'claude',
+            translationProvider: 'openai',
           },
         }),
       }));
@@ -111,7 +110,7 @@ describe('VideoLocalizationPipeline Integration', () => {
       const result = await pipeline.process(mockOptions);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Claude API key not configured');
+      expect(result.error).toContain('OpenAI API key not configured');
     });
 
     it('should support different provider combinations', async () => {
@@ -165,20 +164,20 @@ describe('VideoLocalizationPipeline Integration', () => {
       expect(result.confidence).toBe(0.95);
     });
 
-    it('should perform translation with claude', async () => {
+    it('should perform translation with openai', async () => {
       const segments = [
         { startTime: 0, endTime: 2, text: 'Hello world' },
         { startTime: 2, endTime: 4, text: 'How are you' },
       ];
 
       const mockOptions = {
-        translationProvider: 'claude' as const,
+        translationProvider: 'openai' as const,
         targetLanguage: 'Chinese',
       };
 
       // Mock successful translation
       vi.doMock('../../src/translate/index.js', () => ({
-        ClaudeTranslator: vi.fn().mockImplementation(() => ({
+        OpenAITranslator: vi.fn().mockImplementation(() => ({
           translateSegments: vi.fn().mockResolvedValue([
             { startTime: 0, endTime: 2, text: '你好世界' },
             { startTime: 2, endTime: 4, text: '你好吗' },

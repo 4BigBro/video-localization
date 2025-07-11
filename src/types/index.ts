@@ -42,9 +42,9 @@ export interface ProcessingOptions {
   inputVideo: string;
   outputVideo: string;
   targetLanguage: string;
-  ttsProvider: 'edge' | 'index';
+  ttsProvider: 'edge' | 'openai';
   transcriptionProvider: 'whisper' | 'openai';
-  translationProvider: 'claude' | 'openai' | 'deepl';
+  translationProvider: 'openai' | 'deepl';
   keepIntermediateFiles: boolean;
   audioQuality: 'high' | 'medium' | 'low';
 }

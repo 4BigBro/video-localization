@@ -138,8 +138,8 @@ export class OpenAITTS {
       }
 
       // Wait for file to be written
-      await new Promise((resolve, reject) => {
-        fileStream.on('finish', resolve);
+      await new Promise<void>((resolve, reject) => {
+        fileStream.on('finish', () => resolve());
         fileStream.on('error', reject);
       });
 

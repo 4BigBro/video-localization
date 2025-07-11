@@ -1,19 +1,23 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { config as dotenvConfig } from 'dotenv';
 import { logger } from '../utils/logger.js';
 import { fileExists } from '../utils/file-utils.js';
 
 export interface Config {
   apiKeys: {
-    claude?: string;
+    openai?: string;
+    deepl?: string;
+  };
+  baseUrls: {
     openai?: string;
     deepl?: string;
   };
   defaults: {
     ttsProvider: 'edge' | 'openai';
     transcriptionProvider: 'whisper' | 'openai';
-    translationProvider: 'claude' | 'openai' | 'deepl';
+    translationProvider: 'openai' | 'deepl';
     audioQuality: 'high' | 'medium' | 'low';
   };
   ffmpeg: {
@@ -32,53 +36,62 @@ export interface Config {
   };
 }
 
-const DEFAULT_CONFIG: Config = {
-  apiKeys: {},
-  defaults: {
-    ttsProvider: 'edge',
-    transcriptionProvider: 'whisper',
-    translationProvider: 'claude',
-    audioQuality: 'high',
-  },
-  ffmpeg: {
-    timeout: 300000, // 5 minutes
-  },
-  whisper: {
-    model: 'base',
-  },
-  edgeTts: {
-    defaultVoice: 'zh-CN-XiaoxiaoNeural',
-    rate: '+0%',
-    volume: '+0%',
-    pitch: '+0Hz',
-  },
-};
+// Load environment variables from .env file
+dotenvConfig();
+
+function getDefaultConfig(): Config {
+  return {
+    apiKeys: {},
+    baseUrls: {},
+    defaults: {
+      ttsProvider: (process.env['DEFAULT_TTS_PROVIDER'] as any) || 'edge',
+      transcriptionProvider: (process.env['DEFAULT_TRANSCRIPTION_PROVIDER'] as any) || 'whisper',
+      translationProvider: (process.env['DEFAULT_TRANSLATION_PROVIDER'] as any) || 'openai',
+      audioQuality: (process.env['DEFAULT_AUDIO_QUALITY'] as any) || 'high',
+    },
+    ffmpeg: {
+      timeout: parseInt(process.env['FFMPEG_TIMEOUT'] || '300000'),
+    },
+    whisper: {
+      model: (process.env['WHISPER_MODEL'] as any) || 'base',
+    },
+    edgeTts: {
+      defaultVoice: process.env['EDGE_TTS_VOICE'] || 'zh-CN-XiaoxiaoNeural',
+      rate: process.env['EDGE_TTS_RATE'] || '+0%',
+      volume: process.env['EDGE_TTS_VOLUME'] || '+0%',
+      pitch: process.env['EDGE_TTS_PITCH'] || '+0Hz',
+    },
+  };
+}
 
 export async function loadConfig(): Promise<Config> {
   const configPath = getConfigPath();
   
   try {
+    // Start with defaults (which include env vars)
+    const defaultConfig = getDefaultConfig();
+    
     if (await fileExists(configPath)) {
       const configData = await fs.readFile(configPath, 'utf8');
       const userConfig = JSON.parse(configData);
       
       // Merge with defaults
-      const config = mergeConfig(DEFAULT_CONFIG, userConfig);
+      const config = mergeConfig(defaultConfig, userConfig);
       
-      // Load environment variables
+      // Load environment variables (they take precedence)
       loadEnvironmentVariables(config);
       
       logger.debug(`Configuration loaded from ${configPath}`);
       return config;
     } else {
       logger.info('No configuration file found, using defaults');
-      const config = { ...DEFAULT_CONFIG };
+      const config = { ...defaultConfig };
       loadEnvironmentVariables(config);
       return config;
     }
   } catch (error) {
     logger.warn(`Failed to load configuration: ${error}`);
-    const config = { ...DEFAULT_CONFIG };
+    const config = getDefaultConfig();
     loadEnvironmentVariables(config);
     return config;
   }
@@ -112,6 +125,10 @@ function mergeConfig(defaultConfig: Config, userConfig: any): Config {
       ...defaultConfig.apiKeys,
       ...userConfig.apiKeys,
     },
+    baseUrls: {
+      ...defaultConfig.baseUrls,
+      ...userConfig.baseUrls,
+    },
     defaults: {
       ...defaultConfig.defaults,
       ...userConfig.defaults,
@@ -133,33 +150,38 @@ function mergeConfig(defaultConfig: Config, userConfig: any): Config {
 
 function loadEnvironmentVariables(config: Config): void {
   // Load API keys from environment variables
-  if (process.env.CLAUDE_API_KEY) {
-    config.apiKeys.claude = process.env.CLAUDE_API_KEY;
+  if (process.env['OPENAI_API_KEY']) {
+    config.apiKeys.openai = process.env['OPENAI_API_KEY'];
   }
   
-  if (process.env.OPENAI_API_KEY) {
-    config.apiKeys.openai = process.env.OPENAI_API_KEY;
+  if (process.env['DEEPL_API_KEY']) {
+    config.apiKeys.deepl = process.env['DEEPL_API_KEY'];
   }
   
-  if (process.env.DEEPL_API_KEY) {
-    config.apiKeys.deepl = process.env.DEEPL_API_KEY;
+  // Load base URLs from environment variables
+  if (process.env['OPENAI_BASE_URL']) {
+    config.baseUrls.openai = process.env['OPENAI_BASE_URL'];
+  }
+  
+  if (process.env['DEEPL_BASE_URL']) {
+    config.baseUrls.deepl = process.env['DEEPL_BASE_URL'];
   }
   
   // Load other settings from environment
-  if (process.env.FFMPEG_PATH) {
-    config.ffmpeg.path = process.env.FFMPEG_PATH;
+  if (process.env['FFMPEG_PATH']) {
+    config.ffmpeg.path = process.env['FFMPEG_PATH'];
   }
   
-  if (process.env.WHISPER_PATH) {
-    config.whisper.path = process.env.WHISPER_PATH;
+  if (process.env['WHISPER_PATH']) {
+    config.whisper.path = process.env['WHISPER_PATH'];
   }
   
-  if (process.env.WHISPER_MODEL) {
-    config.whisper.model = process.env.WHISPER_MODEL as any;
+  if (process.env['WHISPER_MODEL']) {
+    config.whisper.model = process.env['WHISPER_MODEL'] as any;
   }
   
-  if (process.env.EDGE_TTS_VOICE) {
-    config.edgeTts.defaultVoice = process.env.EDGE_TTS_VOICE;
+  if (process.env['EDGE_TTS_VOICE']) {
+    config.edgeTts.defaultVoice = process.env['EDGE_TTS_VOICE'];
   }
 }
 
@@ -200,10 +222,6 @@ export async function validateConfig(config: Config): Promise<{ valid: boolean; 
   }
   
   // Check API keys
-  if (config.defaults.translationProvider === 'claude' && !config.apiKeys.claude) {
-    errors.push('Claude API key is required for translation');
-  }
-  
   if (config.defaults.translationProvider === 'openai' && !config.apiKeys.openai) {
     errors.push('OpenAI API key is required for translation');
   }

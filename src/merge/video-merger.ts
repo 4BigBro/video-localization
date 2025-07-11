@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { logger } from '../utils/logger.js';
-import { fileExists, getOutputPath, ensureDirectoryExists, cleanupFiles } from '../utils/file-utils.js';
+import { ensureDirectoryExists, cleanupFiles } from '../utils/file-utils.js';
 import { SubtitleSegment, TTSResult, ProcessingResult } from '../types/index.js';
 
 export interface VideoMergerOptions {
@@ -107,7 +107,7 @@ export class VideoMerger {
   private async concatenateAudio(
     ttsResults: TTSResult[],
     segments: SubtitleSegment[],
-    options: VideoMergerOptions
+    _options: VideoMergerOptions
   ): Promise<string> {
     if (ttsResults.length !== segments.length) {
       throw new Error('TTS results and segments count mismatch');
@@ -145,7 +145,7 @@ export class VideoMerger {
     return outputPath;
   }
 
-  private buildAudioFilterComplex(ttsResults: TTSResult[], segments: SubtitleSegment[]): string {
+  private buildAudioFilterComplex(_ttsResults: TTSResult[], segments: SubtitleSegment[]): string {
     const filters: string[] = [];
     const delays: string[] = [];
 

@@ -24,7 +24,7 @@ program
   .option('-l, --target-lang <lang>', 'Target language (default: Chinese)', 'Chinese')
   .option('--tts-provider <provider>', 'TTS provider: edge, openai', 'edge')
   .option('--transcription-provider <provider>', 'Transcription provider: whisper, openai', 'whisper')
-  .option('--translation-provider <provider>', 'Translation provider: claude, openai, deepl', 'claude')
+  .option('--translation-provider <provider>', 'Translation provider: openai, deepl', 'openai')
   .option('--audio-quality <quality>', 'Audio quality: high, medium, low', 'high')
   .option('--keep-files', 'Keep intermediate files', false)
   .option('--verbose', 'Enable verbose logging', false)
@@ -156,21 +156,25 @@ async function configureSettings(interactive: boolean) {
     const answers = await inquirer.prompt([
       {
         type: 'password',
-        name: 'claudeApiKey',
-        message: 'Enter your Claude API key (optional):',
-        mask: '*',
-      },
-      {
-        type: 'password',
         name: 'openaiApiKey',
         message: 'Enter your OpenAI API key (optional):',
         mask: '*',
+      },
+      {
+        type: 'input',
+        name: 'openaiBaseUrl',
+        message: 'Enter OpenAI base URL (optional, for custom endpoints):',
       },
       {
         type: 'password',
         name: 'deeplApiKey',
         message: 'Enter your DeepL API key (optional):',
         mask: '*',
+      },
+      {
+        type: 'input',
+        name: 'deeplBaseUrl',
+        message: 'Enter DeepL base URL (optional, for custom endpoints):',
       },
       {
         type: 'list',
@@ -190,17 +194,20 @@ async function configureSettings(interactive: boolean) {
         type: 'list',
         name: 'defaultTranslationProvider',
         message: 'Choose default translation provider:',
-        choices: ['claude', 'openai', 'deepl'],
-        default: 'claude',
+        choices: ['openai', 'deepl'],
+        default: 'openai',
       },
     ]);
 
     // Save configuration
     const config = {
       apiKeys: {
-        claude: answers.claudeApiKey || undefined,
         openai: answers.openaiApiKey || undefined,
         deepl: answers.deeplApiKey || undefined,
+      },
+      baseUrls: {
+        openai: answers.openaiBaseUrl || undefined,
+        deepl: answers.deeplBaseUrl || undefined,
       },
       defaults: {
         ttsProvider: answers.defaultTtsProvider,

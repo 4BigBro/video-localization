@@ -1,8 +1,7 @@
 import { spawn } from 'child_process';
-import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { logger } from '../utils/logger.js';
-import { fileExists, getOutputPath, ensureDirectoryExists } from '../utils/file-utils.js';
+import { ensureDirectoryExists } from '../utils/file-utils.js';
 import { SubtitleSegment, TTSResult } from '../types/index.js';
 
 export interface EdgeTTSOptions {
